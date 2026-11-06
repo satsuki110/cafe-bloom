@@ -88,6 +88,42 @@
     .num-sans {
       font-family: 'Noto Sans JP', sans-serif;
     }
+    .letter-stagger {
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .letter-stagger .letter {
+      display: inline-block;
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+      will-change: transform, opacity;
+    }
+    .letter-stagger.is-animated .letter {
+      animation: letter-stagger-rise 900ms ease-in-out forwards;
+      animation-delay: calc(var(--letter-index) * 70ms);
+    }
+    @keyframes letter-stagger-rise {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 18px, 0);
+      }
+      50% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .letter-stagger.is-animated .letter,
+      .letter-stagger .letter {
+        opacity: 1;
+        transform: none;
+        animation: none;
+      }
+    }
 
     /* ===== ヘッダー（固定表示） ===== */
     #site-header {
@@ -463,7 +499,7 @@
       .footer-inner { padding: 0 20px; }
       .scroll-top { bottom: 20px; right: 20px; }
     }
-    </style>
+  </style>
   </head>
   <body class="min-h-screen bg-beige text-darkbrown antialiased selection:bg-terracotta/20 selection:text-darkbrown flex flex-col justify-between">
     <!-- ================= 1. HEADER (固定表示) ================= -->
@@ -558,7 +594,9 @@
               Space &amp; Tone
             </span>
             <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-darkbrown">
-              居心地にこだわった、<span class="num-sans">3</span>つのエリア
+              <span class="letter-stagger" data-letter-stagger aria-label="気分に合わせて座れるスペース">
+                <span class="letter">気</span><span class="letter">分</span><span class="letter">に</span><span class="letter">合</span><span class="letter">わ</span><span class="letter">せ</span><span class="letter">て</span><span class="letter">座</span><span class="letter">れ</span><span class="letter">る</span><span class="letter">ス</span><span class="letter">ペ</span><span class="letter">ー</span><span class="letter">ス</span>
+              </span>
             </h2>
             <div class="flex justify-center mt-4">
               <svg aria-hidden="true" class="w-20 h-4 text-terracotta/70" fill="none" viewbox="0 0 100 16" xmlns="http://www.w3.org/2000/svg">
@@ -713,6 +751,44 @@
       });
       scrollTopBtn.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    })();
+
+    // 文字順次登場（Letter stagger）
+    (function () {
+      const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const targets = document.querySelectorAll('[data-letter-stagger]');
+
+      if (!targets.length) return;
+
+      targets.forEach(function (group, groupIndex) {
+        const letters = group.querySelectorAll('.letter');
+        letters.forEach(function (letter, index) {
+          letter.style.setProperty('--letter-index', index);
+        });
+
+        if (motionQuery.matches) {
+          letters.forEach(function (letter) {
+            letter.style.opacity = '1';
+            letter.style.transform = 'none';
+            letter.style.animation = 'none';
+          });
+          return;
+        }
+
+        const observer = new IntersectionObserver(function (entries, obs) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              group.classList.add('is-animated');
+              obs.unobserve(group);
+            }
+          });
+        }, {
+          threshold: 0.2,
+          rootMargin: '0px 0px -10% 0px'
+        });
+
+        observer.observe(group);
       });
     })();
   </script>
